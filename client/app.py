@@ -5,7 +5,7 @@
 
 # Rename the cybersploit_client folder to whatever you want to call your project
 # Put the name of that folder here
-PROJECT_NAME = "cybersploit_client" 
+PROJECT_NAME = "brainrot_client" 
 
 from cmd import Cmd
 import importlib
