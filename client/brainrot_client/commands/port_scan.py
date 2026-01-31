@@ -1,17 +1,62 @@
-from ..commands import Command # Required
+from ..commands import Command
+
+import socket
+
+def scan_ip(target: str, port_range: tuple[int, int]) -> list[int]:
+
+    open_ports = [] 
+
+    start_port, end_port = port_range
+
+    for port in range(start_port, end_port + 1): 
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.5)
+
+        result = sock.connect_ex((target, port))
+
+        if result == 0: 
+            open_ports.append(port)
+
+        sock.close()
+
+    return open_ports
     
-def print_brick(): # Helper function
-    print("BRICK! 🧱")
 
-class PortScan(Command): # Call the class anything you'd like
+def pretty_print_scan(open_ports: list[int]) -> None:
+
+    print("   Port      Service   ")
+    print("-----------------------")
+
+    for port in open_ports:
+
+        try: 
+            service = socket.getservbyport(port)
+        except OSError:
+            service = "unknown"
+
+        print(f"   {port}      {service}   ")
+
+
+class PortScan(Command):
     """
-    Scan for ports! TODO
+    Scan ports on a target host
+
     """
-    # The text above, known as the docstring, is also shown when using the help command in the terminal
 
-    # When this command is called, do_command() is executed. 
-    # Feel free to make additional functions outside the class (like print_brick) and call them!
-    def do_command(self, lines: str):
-        print_brick()
+    def do_command(self, lines: str, *args): 
 
-command = PortScan # Assign the class you created to the variable called command for the system to find the command!
+        tokens = lines.split()
+
+        if len(tokens) != 3:
+            print("Usage: port_scan <host> <start_port> <end_port>")
+            return
+
+        host = tokens[0]
+        start_port = int(tokens[1])
+        end_port = int(tokens[2])
+
+        open_ports = scan_ip(host, (start_port, end_port))
+        pretty_print_scan(open_ports)
+
+command = PortScan
